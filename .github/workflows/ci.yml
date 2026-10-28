@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # Also dispatched by the test agent after it pushes tests, because pushes made
+  # with GITHUB_TOKEN do not trigger workflows.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:coverage
+      - name: Coverage gaps
+        if: always()
+        run: node ../.claude/skills/coverage-gaps/scripts/coverage-gaps.mjs --app backend --repo .. --format markdown >> "$GITHUB_STEP_SUMMARY"
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run format:check
+      - run: npm run test:coverage
+      - name: Coverage gaps
+        if: always()
+        run: node ../.claude/skills/coverage-gaps/scripts/coverage-gaps.mjs --app frontend --repo .. --format markdown >> "$GITHUB_STEP_SUMMARY"
+
+  test-agent:
+    name: Test agent tooling
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: .github/test-agent/runner/package-lock.json
+      - name: Runner typecheck and tests
+        working-directory: .github/test-agent/runner
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+      - name: Policy, skill script and pipeline tests
+        run: node --test '.claude/**/*.test.mjs' '.github/test-agent/*.test.mjs'

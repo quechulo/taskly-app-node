@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000,
+      "description": "Two to four sentences on what was tested and why, for the PR comment."
+    },
+    "decisions": {
+      "maxItems": 100,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300,
+            "description": "Changed or analysed source file, repo-relative."
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update",
+              "skip"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600,
+            "description": "Why: behaviour covered, or why no test is needed."
+          },
+          "testFiles": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "description": "Test files created or updated for this source file."
+          }
+        },
+        "required": [
+          "file",
+          "action",
+          "reason",
+          "testFiles"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "suspectedDefects": {
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 800
+          },
+          "evidence": {
+            "type": "string",
+            "maxLength": 1500,
+            "description": "Failing expectation, input and observed result."
+          }
+        },
+        "required": [
+          "file",
+          "description",
+          "evidence"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Source behaviour that looks wrong. Never encode it in a passing test, never fix the source."
+    },
+    "notes": {
+      "maxItems": 10,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 500
+      },
+      "description": "Limitations or follow-ups worth a human look."
+    }
+  },
+  "required": [
+    "summary",
+    "decisions",
+    "suspectedDefects",
+    "notes"
+  ],
+  "additionalProperties": false
+}

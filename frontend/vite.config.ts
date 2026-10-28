@@ -25,6 +25,8 @@ export default defineConfig({
       ],
       reporter: ['text', 'html', 'lcov', 'json-summary'],
       reportsDirectory: './coverage',
+      // Ratcheted after the test agent coverage run (lines 100, branches 99.3, functions 100).
+      thresholds: { lines: 95, branches: 95, functions: 95, statements: 95 },
     },
   },
 })
