@@ -1,7 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { todoFixture } from '../../../test/todoFixture'
 import type { Todo } from '../types'
-import { formatDate, isOverdue, selectTodos, validateTodo } from './todos'
+import {
+  formatDate,
+  isOverdue,
+  selectTodos,
+  toLocalDateString,
+  validateTodo,
+} from './todos'
 
 const input = {
   title: 'Task',
@@ -108,6 +114,14 @@ describe('isOverdue and formatDate', () => {
     expect(isOverdue(make('2026-10-16'))).toBe(false)
     expect(isOverdue(make(null))).toBe(false)
     expect(isOverdue(make('2026-10-14', true))).toBe(false)
+  })
+
+  it('formats the local calendar date with zero padding', () => {
+    expect(toLocalDateString(new Date(2026, 0, 5, 23, 59))).toBe('2026-01-05')
+    expect(toLocalDateString(new Date(2026, 11, 25))).toBe('2026-12-25')
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 15, 12))
+    expect(toLocalDateString()).toBe('2026-10-15')
   })
 
   it('formats dates', () => {

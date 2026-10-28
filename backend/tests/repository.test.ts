@@ -17,6 +17,29 @@ it('lists tasks in newest-first order and maps database rows', async () => {
   expect(await repository.list()).toEqual([todo]);
   expect(findMany).toHaveBeenCalledWith({ orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
 });
+it('computes stats from grouped counts and the overdue count', async () => {
+  const { database, repository } = setup();
+  const groupBy = vi.spyOn(database.todo, 'groupBy').mockResolvedValue([
+    { priority: 'high', completed: false, _count: { _all: 2 } },
+    { priority: 'high', completed: true, _count: { _all: 1 } },
+    { priority: 'low', completed: true, _count: { _all: 3 } },
+    { priority: 'weird', completed: false, _count: { _all: 4 } },
+  ] as never);
+  const count = vi.spyOn(database.todo, 'count').mockResolvedValue(5);
+  expect(await repository.stats('2026-10-15')).toEqual({
+    total: 10, active: 6, completed: 4, overdue: 5, by_priority: { low: 3, medium: 0, high: 3 },
+  });
+  expect(groupBy).toHaveBeenCalledWith({ by: ['priority', 'completed'], _count: { _all: true } });
+  expect(count).toHaveBeenCalledWith({ where: { completed: false, due_date: { lt: new Date('2026-10-15T00:00:00.000Z') } } });
+});
+it('returns zeroed stats when there are no tasks', async () => {
+  const { database, repository } = setup();
+  vi.spyOn(database.todo, 'groupBy').mockResolvedValue([] as never);
+  vi.spyOn(database.todo, 'count').mockResolvedValue(0);
+  expect(await repository.stats('2026-10-15')).toEqual({
+    total: 0, active: 0, completed: 0, overdue: 0, by_priority: { low: 0, medium: 0, high: 0 },
+  });
+});
 it('gets a task by ID and handles missing tasks', async () => {
   const { database, repository } = setup();
   const findUnique = vi.spyOn(database.todo, 'findUnique').mockResolvedValueOnce(record).mockResolvedValueOnce(null);

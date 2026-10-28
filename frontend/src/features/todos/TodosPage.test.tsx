@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useNotice } from '../../hooks/useNotice'
 import { todoFixture } from '../../test/todoFixture'
 import { useTodoFilters } from './hooks/useTodoFilters'
+import { useTodoStatsQuery } from './hooks/useTodoStatsQuery'
 import { useTodosBusy } from './hooks/useTodosBusy'
 import { useTodosQuery } from './hooks/useTodosQuery'
 import { useUpdateTodoMutation } from './hooks/useUpdateTodoMutation'
@@ -14,6 +15,18 @@ vi.mock('../../hooks/useNotice', () => ({ useNotice: vi.fn() }))
 vi.mock('./hooks/useTodoFilters', () => ({ useTodoFilters: vi.fn() }))
 vi.mock('./hooks/useTodosBusy', () => ({ useTodosBusy: vi.fn() }))
 vi.mock('./hooks/useTodosQuery', () => ({ useTodosQuery: vi.fn() }))
+vi.mock('./hooks/useTodoStatsQuery', () => ({ useTodoStatsQuery: vi.fn() }))
+vi.mock('./components/TodoStatsSummary', () => ({
+  TodoStatsSummary: ({
+    stats,
+    loading,
+  }: {
+    stats?: { total: number }
+    loading: boolean
+  }) => (
+    <p>{loading ? 'Stats loading' : `Stats total ${stats?.total ?? 'none'}`}</p>
+  ),
+}))
 vi.mock('./hooks/useUpdateTodoMutation', () => ({
   useUpdateTodoMutation: vi.fn(),
 }))
@@ -98,6 +111,10 @@ function arrange({
     reset,
     mutateAsync,
   } as unknown as ReturnType<typeof useUpdateTodoMutation>)
+  vi.mocked(useTodoStatsQuery).mockReturnValue({
+    data: { total: 4 },
+    isPending: false,
+  } as unknown as ReturnType<typeof useTodoStatsQuery>)
   vi.mocked(useTodosBusy).mockReturnValue(busy)
   vi.mocked(useNotice).mockReturnValue({ message: '', notify })
   vi.mocked(useTodoFilters).mockReturnValue({
@@ -143,6 +160,19 @@ describe('TodosPage', () => {
     render(<TodosPage />)
     expect(screen.getByRole('button', { name: 'Header create' })).toBeDisabled()
     expect(screen.queryByTestId('alert')).not.toBeInTheDocument()
+  })
+
+  it('passes stats data and pending state to the summary', () => {
+    arrange()
+    const { unmount } = render(<TodosPage />)
+    expect(screen.getByText('Stats total 4')).toBeVisible()
+    unmount()
+    vi.mocked(useTodoStatsQuery).mockReturnValue({
+      data: undefined,
+      isPending: true,
+    } as unknown as ReturnType<typeof useTodoStatsQuery>)
+    render(<TodosPage />)
+    expect(screen.getByText('Stats loading')).toBeVisible()
   })
 
   it('shows a mutation error and disables retry while busy', () => {

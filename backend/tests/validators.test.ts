@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createSchema, updateSchema, idSchema, todoSchema } from '../src/features/todos/validators.ts';
+import { createSchema, updateSchema, idSchema, todoSchema, statsQuerySchema } from '../src/features/todos/validators.ts';
 import { todo } from './fixture.ts';
 
 describe('todo validation', () => {
@@ -31,6 +31,12 @@ describe('todo validation', () => {
   it('forbids extra patch fields', () => expect(updateSchema.safeParse({ id: 1 }).success).toBe(false));
   it.each(['0', '-1', '1.5', 'abc', '9007199254740992'])('rejects invalid id %s', (id) => {
     expect(idSchema.safeParse(id).success).toBe(false);
+  });
+  it('validates the optional stats date', () => {
+    expect(statsQuerySchema.parse({})).toEqual({});
+    expect(statsQuerySchema.parse({ today: '2026-10-15' })).toEqual({ today: '2026-10-15' });
+    for (const today of ['2026-02-30', '10/15/2026', '2026-10-15T00:00:00Z', ''])
+      expect(statsQuerySchema.safeParse({ today }).success).toBe(false);
   });
   it('parses positive ids and validates the response schema', () => {
     expect(idSchema.parse('12')).toBe(12);
