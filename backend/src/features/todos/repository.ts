@@ -1,5 +1,5 @@
 import { fromModel } from './mappers.js';
-import type { Database, TodoStore, TodoCreate, TodoUpdate, Todo } from './types.js';
+import type { Database, Priority, TodoStats, TodoStore, TodoCreate, TodoUpdate, Todo } from './types.js';
 
 export class TodoRepository implements TodoStore {
   constructor(private readonly database: Pick<Database, 'todo'>) {}
@@ -7,6 +7,22 @@ export class TodoRepository implements TodoStore {
   async list(): Promise<Todo[]> {
     const rows = await this.database.todo.findMany({ orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
     return rows.map(fromModel);
+  }
+
+  async stats(today: string): Promise<TodoStats> {
+    const [groups, overdue] = await Promise.all([
+      this.database.todo.groupBy({ by: ['priority', 'completed'], _count: { _all: true } }),
+      this.database.todo.count({ where: { completed: false, due_date: { lt: new Date(`${today}T00:00:00.000Z`) } } }),
+    ]);
+    const stats: TodoStats = { total: 0, active: 0, completed: 0, overdue, by_priority: { low: 0, medium: 0, high: 0 } };
+    for (const group of groups) {
+      const count = group._count._all;
+      stats.total += count;
+      if (group.completed) stats.completed += count;
+      else stats.active += count;
+      if (group.priority in stats.by_priority) stats.by_priority[group.priority as Priority] += count;
+    }
+    return stats;
   }
 
   async get(id: number): Promise<Todo | null> {

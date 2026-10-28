@@ -13,6 +13,26 @@ it('passes the abort signal when fetching tasks', async () => {
   expect(request).toHaveBeenCalledWith('/todos', { signal })
 })
 
+it('requests stats with an encoded date and the abort signal', async () => {
+  const signal = new AbortController().signal
+  const stats = {
+    total: 1,
+    active: 1,
+    completed: 0,
+    overdue: 0,
+    by_priority: { low: 0, medium: 1, high: 0 },
+  }
+  vi.mocked(request).mockResolvedValue(stats)
+  await expect(todosApi.stats('2026-10-15', signal)).resolves.toEqual(stats)
+  expect(request).toHaveBeenCalledWith('/todos/stats?today=2026-10-15', {
+    signal,
+  })
+  await todosApi.stats('a b&c')
+  expect(request).toHaveBeenLastCalledWith('/todos/stats?today=a%20b%26c', {
+    signal: undefined,
+  })
+})
+
 it('patches only writable fields and deletes by id', async () => {
   vi.mocked(request).mockResolvedValue(todoFixture)
   await todosApi.update(7, { completed: true })

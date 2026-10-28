@@ -13,6 +13,8 @@ export function useDeleteTodoMutation() {
       queryClient.setQueryData<Todo[]>(todoKeys.list, (current) =>
         current?.filter((todo) => todo.id !== id),
       )
+      // Counts are computed on the server; refetch them in the background.
+      void queryClient.invalidateQueries({ queryKey: todoKeys.stats })
     },
   })
 }
