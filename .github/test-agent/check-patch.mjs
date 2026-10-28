@@ -14,6 +14,8 @@ const FORBIDDEN_CONTENT = [
   [/sk-ant-[A-Za-z0-9_-]{8,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----/, 'a credential'],
   [/process\.env\.(?:ANTHROPIC|GITHUB|ACTIONS)_/, 'access to CI credentials'],
   [/\b(?:child_process|node:child_process)\b/, 'spawning processes'],
+  // The runner process holds the API key; its environment is readable via /proc on Linux.
+  [/['"`]\/proc\/|\benviron\b|JSON\.stringify\(\s*process\.env\s*\)/, 'reading process environments'],
 ]
 
 /** Parses `git diff --cached --binary` output and applies the policy. */

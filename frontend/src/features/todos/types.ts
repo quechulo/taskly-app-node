@@ -11,5 +11,12 @@ export interface Todo extends TodoInput {
   created_at: string
   updated_at: string
 }
+export interface TodoStats {
+  total: number
+  active: number
+  completed: number
+  overdue: number
+  by_priority: Record<Priority, number>
+}
 export type Filter = 'all' | 'active' | 'completed'
 export type Sort = 'newest' | 'priority' | 'due'

@@ -78,6 +78,38 @@
         }
       }
     },
+    "/api/todos/stats": {
+      "get": {
+        "summary": "Task statistics",
+        "parameters": [
+          {
+            "name": "today",
+            "in": "query",
+            "required": false,
+            "description": "Client's local date (YYYY-MM-DD) used to decide which tasks are overdue. Defaults to the server's UTC date.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoStats"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
     "/api/todos/{id}": {
       "parameters": [
         {
@@ -279,6 +311,57 @@
           "updated_at": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "TodoStats": {
+        "type": "object",
+        "required": [
+          "total",
+          "active",
+          "completed",
+          "overdue",
+          "by_priority"
+        ],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "active": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "completed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "overdue": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Active tasks due before `today`."
+          },
+          "by_priority": {
+            "type": "object",
+            "required": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "properties": {
+              "low": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "medium": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "high": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
           }
         }
       }

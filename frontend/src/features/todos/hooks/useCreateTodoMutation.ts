@@ -15,6 +15,8 @@ export function useCreateTodoMutation() {
         saved,
         ...current.filter((todo) => todo.id !== saved.id),
       ])
+      // Counts are computed on the server; refetch them in the background.
+      void queryClient.invalidateQueries({ queryKey: todoKeys.stats })
     },
   })
 }
