@@ -129,6 +129,17 @@ jobs:
           if [ "$FRONTEND" = true ]; then npm ci --prefix pr/frontend; fi
       - name: Install agent runner
         run: npm ci --prefix trusted/.github/test-agent/runner
+      - name: Enable subprocess isolation (bubblewrap)
+        # Claude Code needs bubblewrap on Linux for CLAUDE_CODE_SUBPROCESS_ENV_SCRUB (credential
+        # scrubbing and PID isolation of hook subprocesses). Ubuntu 24.04 blocks unprivileged user
+        # namespaces through AppArmor; this ephemeral runner VM is reconfigured to allow them.
+        # The final probe fails the job here, before any API spend, if isolation does not work.
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+          bwrap --ro-bind / / --dev /dev --proc /proc --unshare-pid --unshare-user true
+          echo "bubblewrap $(bwrap --version) works"
       - name: Run test-engineer agent
         # The only step with the API key. The agent has no shell; test processes get a minimal env.
         env:

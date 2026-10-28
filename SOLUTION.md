@@ -66,6 +66,7 @@ The skill scripts (`analyze-changes.mjs`, `coverage-gaps.mjs`) are plain modules
 5. **Least privilege per job.**
    - The LLM job has a read-only token.
    - The API key is set only on the agent step.
+   - Claude Code's subprocess credential scrubbing and PID isolation are on, using bubblewrap on the runner. A probe fails the job before any API spend if isolation is unavailable.
    - `persist-credentials: false` keeps git credentials out of the workspace.
    - The only job with write access (`publish`) runs no PR code: it does `git apply` of the verified bytes, then gate re-check, commit, push and comment.
    - Untrusted values such as branch names reach shell only through `env`.
